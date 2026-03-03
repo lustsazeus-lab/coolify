@@ -26,6 +26,8 @@ env:
   GITHUB_REGISTRY: ghcr.io
   DOCKER_REGISTRY: docker.io
   IMAGE_NAME: "coollabsio/coolify"
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
 jobs:
   build-push:
@@ -62,7 +64,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN  }}
 
       - name: Login to ${{ env.DOCKER_REGISTRY }}
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
@@ -70,7 +72,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push Image (${{ matrix.arch }}) [GHCR + Docker Hub]
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -86,7 +88,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=build-${{ matrix.arch }}
 
       - name: Build and Push Image (${{ matrix.arch }}) [GHCR only]
-        if: ${{ !(secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '') }}
+        if: ${{ env.DOCKERHUB_USERNAME == '' || env.DOCKERHUB_TOKEN == '' }}
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -125,7 +127,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN  }}
 
       - name: Login to ${{ env.DOCKER_REGISTRY }}
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
@@ -140,7 +142,7 @@ jobs:
          --tag ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sanitize.outputs.tag }}
 
       - name: Create & publish manifest on ${{ env.DOCKER_REGISTRY }}
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         run: |
           docker buildx imagetools create \
           ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sanitize.outputs.tag }}-amd64 \
