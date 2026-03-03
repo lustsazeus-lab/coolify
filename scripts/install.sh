@@ -548,7 +548,7 @@ if ! [ -x "$(command -v docker)" ]; then
     echo " - Docker is not installed. Installing Docker. It may take a while."
     getAJoke
     case "$OS_TYPE" in
-    "almalinux")
+    "almalinux" | "rocky")
         dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo >/dev/null 2>&1
         dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin >/dev/null 2>&1
         if ! [ -x "$(command -v docker)" ]; then
