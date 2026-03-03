@@ -165,6 +165,10 @@
                     </div>
                     <x-forms.input placeholder="5432" disabled="{{ $isPublic }}" id="publicPort"
                         label="Public Port" canGate="update" :canResource="$database" />
+                    <x-forms.input placeholder="3600" id="proxyTimeout"
+                        label="Proxy Timeout (seconds)"
+                        helper="Timeout for the public proxy in seconds. Set to 0 for no timeout. Default: 3600 (1 hour)."
+                        canGate="update" :canResource="$database" />
                 </div>
 
                 <div class="flex flex-col gap-2">
