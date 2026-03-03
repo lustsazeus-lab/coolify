@@ -62,13 +62,15 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN  }}
 
       - name: Login to ${{ env.DOCKER_REGISTRY }}
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push Image (${{ matrix.arch }})
+      - name: Build and Push Image (${{ matrix.arch }}) [GHCR + Docker Hub]
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -77,6 +79,21 @@ jobs:
           push: true
           tags: |
             ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sanitize.outputs.tag }}-${{ matrix.arch }}
+            ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sanitize.outputs.tag }}-${{ matrix.arch }}
+          cache-from: |
+            type=gha,scope=build-${{ matrix.arch }}
+            type=registry,ref=${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=build-${{ matrix.arch }}
+
+      - name: Build and Push Image (${{ matrix.arch }}) [GHCR only]
+        if: ${{ !(secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '') }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/production/Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: |
             ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sanitize.outputs.tag }}-${{ matrix.arch }}
           cache-from: |
             type=gha,scope=build-${{ matrix.arch }}
@@ -108,6 +125,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN  }}
 
       - name: Login to ${{ env.DOCKER_REGISTRY }}
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
@@ -122,6 +140,7 @@ jobs:
          --tag ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sanitize.outputs.tag }}
 
       - name: Create & publish manifest on ${{ env.DOCKER_REGISTRY }}
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
         run: |
           docker buildx imagetools create \
           ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sanitize.outputs.tag }}-amd64 \
